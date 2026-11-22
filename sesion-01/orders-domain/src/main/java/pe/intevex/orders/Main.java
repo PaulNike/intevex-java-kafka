@@ -3,6 +3,7 @@ package pe.intevex.orders;
 import pe.intevex.orders.domain.Customer;
 import pe.intevex.orders.domain.CustomerType;
 import pe.intevex.orders.domain.Product;
+import pe.intevex.orders.tarea.Inventario;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -25,5 +26,13 @@ public class Main {
         var maria = new Customer("C-1", "María Rojas", "maria@correo.com", CustomerType.VIP);
         var juan = new Customer("C-2", "Juan Pérez", "juan@correo.com", CustomerType.NEW);
         System.out.println(maria);
-        System.out.println(juan);    }
+        System.out.println(juan);
+
+
+        System.out.println("\n=== Tarea 1 ===");
+        System.out.println("Valor del inventario: S/ " + Inventario.valorTotal(catalogo));
+        System.out.println("Poco stock (<= 5):");
+        Inventario.conPocoStock(catalogo, 5).forEach(p -> System.out.println("  " + p));
+
+    }
 }
