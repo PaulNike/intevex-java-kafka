@@ -1,6 +1,8 @@
 package pe.intevex.orders.domain;
 
-/** Un cliente de la tienda. */
+import java.util.Objects;
+
+/** Un cliente de la tienda. Dos clientes son el mismo si tienen el mismo id. */
 public class Customer {
 
     private final String id;
@@ -9,10 +11,10 @@ public class Customer {
     private final CustomerType type;
 
     public Customer(String id, String fullName, String email, CustomerType type) {
-        this.id = id;
-        this.fullName = fullName;
+        this.id = Objects.requireNonNull(id, "El id es obligatorio");
+        this.fullName = Objects.requireNonNull(fullName, "El nombre es obligatorio");
         this.email = email;
-        this.type = type;
+        this.type = Objects.requireNonNull(type, "El tipo de cliente es obligatorio");
     }
 
     public String getId() {
@@ -29,6 +31,18 @@ public class Customer {
 
     public CustomerType getType() {
         return type;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Customer other)) return false;
+        return id.equals(other.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 
     @Override

@@ -1,10 +1,19 @@
 package pe.intevex.orders;
 
+import pe.intevex.orders.discount.CustomerTypeDiscount;
+import pe.intevex.orders.discount.DiscountPolicy;
+import pe.intevex.orders.discount.FirstPurchaseDiscount;
+import pe.intevex.orders.discount.NoDiscount;
+import pe.intevex.orders.discount.PercentageDiscount;
 import pe.intevex.orders.domain.Customer;
 import pe.intevex.orders.domain.CustomerType;
+import pe.intevex.orders.domain.Order;
 import pe.intevex.orders.domain.Product;
-import pe.intevex.orders.retos.MiniRetos;
-import pe.intevex.orders.tarea.Inventario;
+import pe.intevex.orders.payment.BankTransfer;
+import pe.intevex.orders.payment.Card;
+import pe.intevex.orders.payment.PaymentDescriber;
+import pe.intevex.orders.payment.PaymentMethod;
+import pe.intevex.orders.payment.Yape;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -12,31 +21,57 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("=== Catálogo ===");
-        List<Product> catalogo = List.of(
-                new Product("KB-001", "Teclado mecánico", new BigDecimal("199.90"), 15),
-                new Product("MS-002", "Mouse inalámbrico", new BigDecimal("79.90"), 3),
-                new Product("MN-003", "Monitor 27\"", new BigDecimal("1099.00"), 5),
-                new Product("HS-004", "Audífonos gamer", new BigDecimal("249.50"), 0)
-        );
-        catalogo.forEach(System.out::println);
+        var teclado = Product.of("KB-001", "Teclado mecánico", "199.90", 15);
+        var mouse = Product.of("MS-002", "Mouse inalámbrico", "79.90", 3);
+        var monitor = Product.of("MN-003", "Monitor 27\"", "1099.00", 5);
 
-        System.out.println("\n=== Clientes ===");
         var maria = new Customer("C-1", "María Rojas", "maria@correo.com", CustomerType.VIP);
         var juan = new Customer("C-2", "Juan Pérez", "juan@correo.com", CustomerType.NEW);
-        System.out.println(maria);
-        System.out.println(juan);
 
-        System.out.println("\n=== Mini retos ===");
-        var subtotal = new BigDecimal("279.80");
-        System.out.println("Subtotal: S/ " + subtotal);
-        System.out.println("IGV:      S/ " + MiniRetos.calcularIgv(subtotal));
-        System.out.println("Total:    S/ " + MiniRetos.calcularTotal(subtotal));
-        System.out.println("Descuento de " + maria.getFullName() + ": " + MiniRetos.porcentajeDescuento(maria.getType()));
+        System.out.println("=== Pedido de María (VIP) ===");
+        var pedido = new Order(maria);
+        pedido.addItem(teclado, 1);
+        pedido.addItem(mouse, 2);
+        pedido.getItems().forEach(i -> System.out.println("  " + i.quantity() + " x " + i.name() + " = " + i.subtotal()));
+        System.out.println("Subtotal: " + pedido.subtotal());
 
-        System.out.println("\n=== Tarea 1 ===");
-        System.out.println("Valor del inventario: S/ " + Inventario.valorTotal(catalogo));
-        System.out.println("Poco stock (<= 5):");
-        Inventario.conPocoStock(catalogo, 5).forEach(p -> System.out.println("  " + p));
+        List<DiscountPolicy> politicas = List.of(
+                new NoDiscount(),
+                new PercentageDiscount(new BigDecimal("0.15")),
+                new CustomerTypeDiscount(),
+                new FirstPurchaseDiscount());
+        for (DiscountPolicy p : politicas) {
+            System.out.println("  " + p.getClass().getSimpleName() + " -> total " + pedido.total(p));
+        }
+
+        System.out.println("\n=== Ciclo de vida ===");
+        pedido.confirm();
+        System.out.println("Estado: " + pedido.getStatus());
+        try {
+            pedido.addItem(monitor, 1);
+        } catch (IllegalStateException e) {
+            System.out.println("Bloqueado: " + e.getMessage());
+        }
+        pedido.markAsPaid();
+        System.out.println("Estado: " + pedido.getStatus());
+        try {
+            pedido.cancel();
+        } catch (IllegalStateException e) {
+            System.out.println("Bloqueado: " + e.getMessage());
+        }
+
+        System.out.println("\n=== Primera compra de Juan (NEW) ===");
+        var pedidoJuan = new Order(juan);
+        pedidoJuan.addItem(teclado, 1);
+        System.out.println("Subtotal " + pedidoJuan.subtotal() + " -> con FirstPurchaseDiscount " + pedidoJuan.total(new FirstPurchaseDiscount()));
+
+        System.out.println("\n=== Tarea 2 · Medios de pago ===");
+        List<PaymentMethod> medios = List.of(
+                new Card("Visa", "4321"),
+                new Yape("987654321"),
+                new BankTransfer("BCP", "00123456"));
+        for (PaymentMethod m : medios) {
+            System.out.println("  " + PaymentDescriber.describe(m) + " | comisión " + PaymentDescriber.commission(m, pedido.subtotal()));
+        }
     }
 }

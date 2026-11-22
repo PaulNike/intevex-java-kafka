@@ -1,10 +1,11 @@
 package pe.intevex.orders.domain;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 /**
  * Un producto que vende la tienda.
- * El precio es BigDecimal: el dinero NUNCA se guarda en double.
+ * Sesión 2: validamos en el constructor y definimos la igualdad por SKU.
  */
 public class Product {
 
@@ -14,10 +15,27 @@ public class Product {
     private int stock;
 
     public Product(String sku, String name, BigDecimal price, int stock) {
+        if (sku == null || sku.isBlank()) {
+            throw new IllegalArgumentException("El SKU es obligatorio");
+        }
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("El nombre es obligatorio");
+        }
+        if (price == null || price.signum() <= 0) {
+            throw new IllegalArgumentException("El precio debe ser mayor a 0");
+        }
+        if (stock < 0) {
+            throw new IllegalArgumentException("El stock no puede ser negativo");
+        }
         this.sku = sku;
         this.name = name;
         this.price = price;
         this.stock = stock;
+    }
+
+    /** Método de fábrica estático: más fácil de leer que el constructor. */
+    public static Product of(String sku, String name, String price, int stock) {
+        return new Product(sku, name, new BigDecimal(price), stock);
     }
 
     public String getSku() {
@@ -34,6 +52,19 @@ public class Product {
 
     public int getStock() {
         return stock;
+    }
+
+    /** Dos productos son el mismo si tienen el mismo SKU. */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Product other)) return false;
+        return sku.equals(other.sku);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sku);
     }
 
     @Override
